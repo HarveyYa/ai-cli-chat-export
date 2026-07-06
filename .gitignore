@@ -1,0 +1,5 @@
+node_modules/
+dist/
+ai-conversations-export/
+*.log
+.DS_Store

@@ -1,0 +1,38 @@
+{
+  "name": "ai-chat-export",
+  "version": "0.1.0",
+  "description": "One-command exporter for local CLI AI conversation history — Claude Code, Codex CLI, opencode, Gemini/Qwen CLI. Zero runtime dependencies, read-only. (Web chats: see the companion userscript project.)",
+  "type": "module",
+  "bin": {
+    "ai-chat-export": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "export",
+    "claude-code",
+    "codex",
+    "opencode",
+    "cli",
+    "conversation",
+    "backup"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
