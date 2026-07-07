@@ -2,6 +2,8 @@
 
 # ai-cli-chat-export
 
+[![npm](https://img.shields.io/npm/v/ai-cli-chat-export?logo=npm&color=cb3837)](https://www.npmjs.com/package/ai-cli-chat-export)
+
 One command to export **all** your AI conversation history from the command-line
 tools on your machine into portable Markdown + JSON. For **web** chats (ChatGPT,
 Claude.ai, …) see the companion [`ai-web-chat-export`](../ai-web-chat-export)

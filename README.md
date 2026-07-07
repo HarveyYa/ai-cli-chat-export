@@ -2,6 +2,8 @@
 
 # ai-cli-chat-export
 
+[![npm](https://img.shields.io/npm/v/ai-cli-chat-export?logo=npm&color=cb3837)](https://www.npmjs.com/package/ai-cli-chat-export)
+
 一条命令，把你机器上各种**命令行 AI 工具**的对话历史**全部**导出成便携的
 Markdown + JSON。**网页版**对话（ChatGPT、Claude.ai 等）请用配套的
 [`ai-web-chat-export`](../ai-web-chat-export) 油猴脚本。
