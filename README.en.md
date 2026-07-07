@@ -27,23 +27,39 @@ the provider's servers with no local file to read; they are handled by a separat
 companion **userscript** (browser extension) project, which exports the page you
 are looking at, from within your own logged-in session.
 
+## Install
+
+Published on npm: [`ai-cli-chat-export`](https://www.npmjs.com/package/ai-cli-chat-export).
+
+```bash
+# No install, just run (best for one-off use)
+npx ai-cli-chat-export
+
+# Global install, then use the short command
+npm install -g ai-cli-chat-export
+```
+
+A global install gives you two equivalent commands: the full `ai-cli-chat-export`
+and the short alias **`acx`**. They do exactly the same thing — type `acx` for short.
+
 ## Usage
 
-> Installs two equivalent commands: the full `ai-cli-chat-export` and the short
-> alias **`acx`**. Examples below use the full name; type `acx` for short.
+> Examples below use the short alias **`acx`** (identical to the full
+> `ai-cli-chat-export`). Without a global install, replace `acx` with
+> `npx ai-cli-chat-export`.
 
 ```bash
 # Export everything found on this machine → ./ai-conversations-export
-npx ai-cli-chat-export
+acx
 
 # See what's here without writing anything
-npx ai-cli-chat-export --list
+acx --list
 
 # Only specific sources
-npx ai-cli-chat-export --source claude-code,codex
+acx --source claude-code,codex
 
 # Filter by date, Markdown only, include model reasoning
-npx ai-cli-chat-export --since 2026-01-01 --format md --include-thinking
+acx --since 2026-01-01 --format md --include-thinking
 ```
 
 ### Options
