@@ -1,10 +1,10 @@
 {
-  "name": "ai-chat-export",
+  "name": "ai-cli-chat-export",
   "version": "0.1.0",
   "description": "One-command exporter for local CLI AI conversation history — Claude Code, Codex CLI, opencode, Gemini/Qwen CLI. Zero runtime dependencies, read-only. (Web chats: see the companion userscript project.)",
   "type": "module",
   "bin": {
-    "ai-chat-export": "dist/cli.js"
+    "ai-cli-chat-export": "dist/cli.js"
   },
   "files": [
     "dist",

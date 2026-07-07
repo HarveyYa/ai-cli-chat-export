@@ -1,7 +1,9 @@
-# ai-chat-export
+# ai-cli-chat-export
 
-One command to export **all** your AI conversation history from the tools on your
-machine into portable Markdown + JSON.
+One command to export **all** your AI conversation history from the command-line
+tools on your machine into portable Markdown + JSON. For **web** chats (ChatGPT,
+Claude.ai, …) see the companion [`ai-web-chat-export`](../ai-web-chat-export)
+userscript.
 
 - **Read-only.** Never modifies or deletes source files.
 - **Local-only.** Nothing is uploaded anywhere.
@@ -27,16 +29,16 @@ are looking at, from within your own logged-in session.
 
 ```bash
 # Export everything found on this machine → ./ai-conversations-export
-npx ai-chat-export
+npx ai-cli-chat-export
 
 # See what's here without writing anything
-npx ai-chat-export --list
+npx ai-cli-chat-export --list
 
 # Only specific sources
-npx ai-chat-export --source claude-code,codex
+npx ai-cli-chat-export --source claude-code,codex
 
 # Filter by date, Markdown only, include model reasoning
-npx ai-chat-export --since 2026-01-01 --format md --include-thinking
+npx ai-cli-chat-export --since 2026-01-01 --format md --include-thinking
 ```
 
 ### Options
