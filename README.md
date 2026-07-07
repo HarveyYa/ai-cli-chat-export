@@ -6,7 +6,7 @@
 
 一条命令，把你机器上各种**命令行 AI 工具**的对话历史**全部**导出成便携的
 Markdown + JSON。**网页版**对话（ChatGPT、Claude.ai 等）请用配套的
-[`ai-web-chat-export`](../ai-web-chat-export) 油猴脚本。
+[`ai-web-chat-export`](https://github.com/HarveyYa/ai-web-chat-export) 油猴脚本。
 
 - **只读。** 绝不修改或删除源文件。
 - **纯本地。** 不上传任何东西到任何地方。

@@ -6,7 +6,7 @@
 
 One command to export **all** your AI conversation history from the command-line
 tools on your machine into portable Markdown + JSON. For **web** chats (ChatGPT,
-Claude.ai, …) see the companion [`ai-web-chat-export`](../ai-web-chat-export)
+Claude.ai, …) see the companion [`ai-web-chat-export`](https://github.com/HarveyYa/ai-web-chat-export)
 userscript.
 
 - **Read-only.** Never modifies or deletes source files.
