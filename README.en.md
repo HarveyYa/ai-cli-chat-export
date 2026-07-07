@@ -29,6 +29,9 @@ are looking at, from within your own logged-in session.
 
 ## Usage
 
+> Installs two equivalent commands: the full `ai-cli-chat-export` and the short
+> alias **`acx`**. Examples below use the full name; type `acx` for short.
+
 ```bash
 # Export everything found on this machine → ./ai-conversations-export
 npx ai-cli-chat-export
