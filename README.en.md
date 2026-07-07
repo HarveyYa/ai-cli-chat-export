@@ -23,6 +23,9 @@ userscript.
 | **opencode** | `~/.local/share/opencode/opencode.db` (SQLite) | ✅ verified against real data |
 | **Gemini CLI** | `~/.gemini/tmp/**/{logs.json,checkpoint*.json}` | ⚠️ best-effort (upstream format; no local data to verify) |
 | **Qwen Code** | `~/.qwen/tmp/**/{logs.json,checkpoint*.json}` | ⚠️ best-effort (upstream format; no local data to verify) |
+| **Aider** | per-project `.aider.chat.history.md` (override via `AIDER_CHAT_HISTORY_FILE`) | ⚠️ best-effort (not yet verified against real data) |
+| **Cursor CLI** | `~/.cursor/chats/` | ⚠️ best-effort (not yet verified against real data) |
+| **Goose** | `~/.local/share/goose/sessions/` (SQLite `sessions.db`; legacy `*.jsonl`) | ⚠️ best-effort (not yet verified against real data) |
 
 This tool is **local CLI only** — it reads conversation logs that command-line
 AI tools leave on your disk. **Web conversations** (ChatGPT, Claude.ai, …) live on
@@ -71,7 +74,7 @@ acx --since 2026-01-01 --format md --include-thinking
 -o, --out <dir>        Output directory (default: ./ai-conversations-export)
 -f, --format <list>    md,json (default: both)
 -s, --source <list>    Restrict to sources: claude-code, codex, opencode,
-                       gemini, qwen
+                       gemini, qwen, aider, cursor, goose
     --since <date>     Only conversations updated on/after YYYY-MM-DD
     --until <date>     Only conversations updated on/before YYYY-MM-DD
     --include-thinking Include model reasoning/thinking blocks
