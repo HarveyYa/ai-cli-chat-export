@@ -1,4 +1,4 @@
-> **简体中文** · [English](./README.en.md)
+> **简体中文** · [English](https://github.com/HarveyYa/ai-cli-chat-export/blob/main/README.en.md)
 
 # ai-cli-chat-export
 
