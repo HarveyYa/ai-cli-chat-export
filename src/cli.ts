@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
@@ -8,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { adapters, adapterById } from "./adapters/index.js";
 import { renderMarkdown } from "./render/markdown.js";
 import { Conversation } from "./types.js";
-import { dateStamp, deriveTitle, ensureDir, slug, truncate } from "./util.js";
+import { dateStamp, deriveTitle, ensureDir, exists, slug, truncate } from "./util.js";
 
 interface Args {
   out: string;
@@ -17,6 +18,7 @@ interface Args {
   since?: string;
   until?: string;
   includeThinking: boolean;
+  full: boolean;
   list: boolean;
   help: boolean;
 }
@@ -29,6 +31,7 @@ function parseArgs(argv: string[]): Args {
     since: undefined,
     until: undefined,
     includeThinking: false,
+    full: false,
     list: false,
     help: false,
   };
@@ -56,6 +59,10 @@ function parseArgs(argv: string[]): Args {
         break;
       case "--include-thinking":
         a.includeThinking = true;
+        break;
+      case "--full":
+      case "--force":
+        a.full = true;
         break;
       case "-l":
       case "--list":
@@ -86,16 +93,21 @@ OPTIONS
       --since <date>     Only conversations updated on/after YYYY-MM-DD
       --until <date>     Only conversations updated on/before YYYY-MM-DD
       --include-thinking Include model reasoning/thinking blocks
+      --full             Re-export everything, ignoring incremental state
+                         (alias: --force). Default is incremental: only new
+                         or changed conversations are written.
   -l, --list             List what would be exported; write nothing
   -h, --help             Show this help
 
 EXAMPLES
-  ai-chat-export                          # export everything to ./ai-conversations-export
-  ai-chat-export --list                   # see what's on this machine
+  ai-chat-export                          # incremental export to ./ai-conversations-export
+  ai-chat-export --list                   # see what's new/changed/unchanged
+  ai-chat-export --full                   # force a full re-export
   ai-chat-export -s claude-code,codex     # only two sources
   ai-chat-export --since 2026-01-01 -f md
 
 Read-only: never modifies or deletes source files. Nothing is uploaded.
+Incremental: re-running skips conversations already exported and unchanged.
 `;
 
 function inRange(c: Conversation, since?: string, until?: string): boolean {
@@ -107,18 +119,79 @@ function inRange(c: Conversation, since?: string, until?: string): boolean {
   return true;
 }
 
-async function uniquePath(dir: string, base: string, ext: string): Promise<string> {
-  let name = `${base}.${ext}`;
-  let n = 1;
-  while (true) {
-    const full = path.join(dir, name);
-    try {
-      await fs.access(full);
-      name = `${base}-${++n}.${ext}`;
-    } catch {
-      return full;
-    }
+// ── Incremental state ──────────────────────────────────────────────────────
+// A small manifest kept in the output directory so re-running only writes
+// conversations that are new or whose content changed. Keyed by "source:id".
+const STATE_FILE = ".export-state.json";
+
+interface StateEntry {
+  source: string;
+  updatedAt?: string;
+  /** Content hash; "" means seeded from a legacy index.json (hash unknown). */
+  hash: string;
+  /** Stable filename stem (no dir, no extension), reused across runs. */
+  base: string;
+  files: { md?: string; json?: string };
+}
+interface ExportState {
+  version: number;
+  entries: Record<string, StateEntry>;
+}
+
+type ExportStatus = "new" | "updated" | "skip";
+
+/** Content fingerprint: changes when the conversation's substance changes. */
+function contentHash(c: Conversation): string {
+  const h = createHash("sha1");
+  h.update(`${c.title || ""}\0${c.model || ""}`);
+  for (const m of c.messages) h.update(`\0${m.role}\0${m.text}`);
+  return h.digest("hex");
+}
+
+function shortId(id: string): string {
+  return createHash("sha1").update(id).digest("hex").slice(0, 6);
+}
+
+function baseFromRel(rel?: string): string {
+  if (!rel) return "";
+  return path.basename(rel).replace(/\.(md|json)$/i, "");
+}
+
+/** Load prior state; if absent, seed from an existing index.json so a
+ *  pre-incremental export isn't re-written wholesale on first upgrade. */
+async function loadState(out: string): Promise<ExportState> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(path.join(out, STATE_FILE), "utf8"));
+    if (parsed && parsed.entries) return { version: 1, entries: parsed.entries };
+  } catch {
+    /* no state file — try legacy seed below */
   }
+  const entries: Record<string, StateEntry> = {};
+  try {
+    const idx = JSON.parse(await fs.readFile(path.join(out, "index.json"), "utf8"));
+    for (const r of idx.conversations || []) {
+      if (!r.id || !r.source) continue;
+      const files = r.files || {};
+      entries[`${r.source}:${r.id}`] = {
+        source: r.source,
+        updatedAt: r.updatedAt,
+        hash: "", // unknown until we re-hash on this run
+        base: baseFromRel(files.md || files.json),
+        files,
+      };
+    }
+  } catch {
+    /* no legacy index either — start empty */
+  }
+  return { version: 1, entries };
+}
+
+async function allFormatFilesPresent(out: string, files: StateEntry["files"], formats: Set<string>): Promise<boolean> {
+  for (const f of formats) {
+    const rel = (files as any)[f];
+    if (!rel || !(await exists(path.join(out, rel)))) return false;
+  }
+  return true;
 }
 
 async function main() {
@@ -154,12 +227,56 @@ async function main() {
   const totalMsgs = all.reduce((n, c) => n + c.messages.length, 0);
   process.stdout.write(`\nTotal: ${all.length} conversation(s), ${totalMsgs} message(s).\n`);
 
+  // Plan the export against prior incremental state.
+  const state = await loadState(args.out);
+  const usedBases = new Set<string>();
+  for (const e of Object.values(state.entries)) if (e.base) usedBases.add(`${e.source}/${e.base}`);
+
+  interface PlanItem { c: Conversation; status: ExportStatus; base: string; }
+  const plan: PlanItem[] = [];
+  for (const c of all) {
+    const key = `${c.source}:${c.id}`;
+    const prev = state.entries[key];
+    const h = contentHash(c);
+
+    // Stable filename stem: reuse the prior one; disambiguate new collisions
+    // deterministically so names never drift between runs.
+    let base = prev?.base;
+    if (!base) {
+      base = `${dateStamp(c.updatedAt || c.createdAt)}-${slug(c.title || c.id)}`;
+      if (usedBases.has(`${c.source}/${base}`)) base = `${base}-${shortId(c.id)}`;
+      usedBases.add(`${c.source}/${base}`);
+    }
+
+    let status: ExportStatus;
+    if (args.full || !prev) {
+      status = prev ? "updated" : "new";
+    } else if (prev.hash && prev.hash === h) {
+      // Unchanged — skippable only if every requested format is still on disk.
+      status = (await allFormatFilesPresent(args.out, prev.files, args.formats)) ? "skip" : "updated";
+    } else if (prev.hash === "") {
+      // Seeded from a legacy index without a hash: adopt if its files remain.
+      status = (await allFormatFilesPresent(args.out, prev.files, args.formats)) ? "skip" : "new";
+    } else {
+      status = "updated";
+    }
+    plan.push({ c, status, base });
+
+    // Refresh the entry now; file paths are filled in during the write pass.
+    state.entries[key] = { source: c.source, updatedAt: c.updatedAt, hash: h, base, files: prev?.files || {} };
+  }
+
+  const counts = { new: 0, updated: 0, skip: 0 };
+  for (const p of plan) counts[p.status]++;
+  const summary = `${counts.new} new, ${counts.updated} updated · ${counts.skip} unchanged (skipped)`;
+
   if (args.list) {
     process.stdout.write("\n");
-    for (const c of all) {
-      process.stdout.write(`  [${c.sourceLabel}] ${dateStamp(c.updatedAt || c.createdAt)}  ${truncate(c.title || c.id, 70)}\n`);
+    for (const p of plan) {
+      const tag = p.status === "new" ? "＋ new    " : p.status === "updated" ? "~ updated" : "· skip   ";
+      process.stdout.write(`  ${tag} [${p.c.sourceLabel}] ${dateStamp(p.c.updatedAt || p.c.createdAt)}  ${truncate(p.c.title || p.c.id, 66)}\n`);
     }
-    process.stdout.write("\n(--list: nothing written)\n");
+    process.stdout.write(`\nWould write: ${summary}.\n(--list: nothing written)\n`);
     return;
   }
 
@@ -171,10 +288,10 @@ async function main() {
   await ensureDir(args.out);
   const manifest: any[] = [];
 
-  for (const c of all) {
+  for (const { c, status, base } of plan) {
     const sourceDir = path.join(args.out, c.source);
-    await ensureDir(sourceDir);
-    const base = `${dateStamp(c.updatedAt || c.createdAt)}-${slug(c.title || c.id)}`;
+    const write = status !== "skip";
+    if (write) await ensureDir(sourceDir);
     const record: any = {
       id: c.id,
       source: c.source,
@@ -188,23 +305,24 @@ async function main() {
       sourceFile: c.sourceFile,
       files: {},
     };
-    if (args.formats.has("md")) {
-      const p = await uniquePath(sourceDir, base, "md");
-      await fs.writeFile(p, renderMarkdown(c), "utf8");
-      record.files.md = path.relative(args.out, p);
+    const files: StateEntry["files"] = {};
+    for (const ext of ["md", "json"] as const) {
+      if (!args.formats.has(ext)) continue;
+      const p = path.join(sourceDir, `${base}.${ext}`);
+      if (write) await fs.writeFile(p, ext === "md" ? renderMarkdown(c) : JSON.stringify(c, null, 2), "utf8");
+      const rel = path.relative(args.out, p);
+      files[ext] = rel;
+      record.files[ext] = rel;
     }
-    if (args.formats.has("json")) {
-      const p = await uniquePath(sourceDir, base, "json");
-      await fs.writeFile(p, JSON.stringify(c, null, 2), "utf8");
-      record.files.json = path.relative(args.out, p);
-    }
+    state.entries[`${c.source}:${c.id}`].files = files;
     manifest.push(record);
   }
 
-  await fs.writeFile(path.join(args.out, "index.json"), JSON.stringify({ generatedAt: new Date().toISOString(), count: all.length, conversations: manifest }, null, 2), "utf8");
+  await fs.writeFile(path.join(args.out, "index.json"), JSON.stringify({ generatedAt: new Date().toISOString(), count: manifest.length, conversations: manifest }, null, 2), "utf8");
   await writeIndexMd(args.out, manifest);
+  await fs.writeFile(path.join(args.out, STATE_FILE), JSON.stringify(state, null, 2), "utf8");
 
-  process.stdout.write(`\n✅ Exported to ${args.out}\n   Formats: ${[...args.formats].join(", ")}  •  index.json + index.md written.\n`);
+  process.stdout.write(`\n✅ Exported to ${args.out}\n   ${summary}  •  Formats: ${[...args.formats].join(", ")}  •  index.json + index.md written.\n`);
 }
 
 async function writeIndexMd(out: string, manifest: any[]): Promise<void> {

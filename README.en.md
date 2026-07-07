@@ -11,6 +11,7 @@ userscript.
 
 - **Read-only.** Never modifies or deletes source files.
 - **Local-only.** Nothing is uploaded anywhere.
+- **Incremental by default.** Re-running writes only new or changed conversations; already-exported, unchanged ones are skipped — no duplicate copies.
 - **Zero runtime dependencies.** Pure Node (uses the built-in `node:sqlite`).
 
 ## Supported sources
@@ -74,9 +75,21 @@ acx --since 2026-01-01 --format md --include-thinking
     --since <date>     Only conversations updated on/after YYYY-MM-DD
     --until <date>     Only conversations updated on/before YYYY-MM-DD
     --include-thinking Include model reasoning/thinking blocks
--l, --list             List what would be exported; write nothing
+    --full             Re-export everything, ignoring incremental state
+                       (alias: --force)
+-l, --list             List what would be exported (tagged new/updated/skip);
+                       write nothing
 -h, --help             Show help
 ```
+
+### Incremental export
+
+Incremental **by default**: an `.export-state.json` in the output directory records each
+conversation's update time and a content hash. On re-run, only **new** or **content-changed**
+conversations are written (overwriting in place); the rest are skipped — no more `-2`/`-3`
+copies like earlier versions produced. Pass `--full` to force a complete re-export. An existing
+pre-incremental export directory is adopted automatically from its `index.json` on the first
+incremental run, so nothing is re-exported wholesale.
 
 ## Output layout
 
