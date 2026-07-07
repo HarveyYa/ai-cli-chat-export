@@ -1,66 +1,65 @@
+> **简体中文** · [English](./README.en.md)
+
 # ai-cli-chat-export
 
-One command to export **all** your AI conversation history from the command-line
-tools on your machine into portable Markdown + JSON. For **web** chats (ChatGPT,
-Claude.ai, …) see the companion [`ai-web-chat-export`](../ai-web-chat-export)
-userscript.
+一条命令，把你机器上各种**命令行 AI 工具**的对话历史**全部**导出成便携的
+Markdown + JSON。**网页版**对话（ChatGPT、Claude.ai 等）请用配套的
+[`ai-web-chat-export`](../ai-web-chat-export) 油猴脚本。
 
-- **Read-only.** Never modifies or deletes source files.
-- **Local-only.** Nothing is uploaded anywhere.
-- **Zero runtime dependencies.** Pure Node (uses the built-in `node:sqlite`).
+- **只读。** 绝不修改或删除源文件。
+- **纯本地。** 不上传任何东西到任何地方。
+- **零运行时依赖。** 纯 Node（使用内置的 `node:sqlite`）。
 
-## Supported sources
+## 支持的来源
 
-| Source | Where it reads | Status |
+| 来源 | 读取位置 | 状态 |
 |---|---|---|
-| **Claude Code** | `~/.claude/projects/**/*.jsonl` | ✅ verified against real data |
-| **Codex CLI** | `~/.codex/sessions/**/rollout-*.jsonl` | ✅ verified against real data |
-| **opencode** | `~/.local/share/opencode/opencode.db` (SQLite) | ✅ verified against real data |
-| **Gemini CLI** | `~/.gemini/tmp/**/{logs.json,checkpoint*.json}` | ⚠️ best-effort (upstream format; no local data to verify) |
-| **Qwen Code** | `~/.qwen/tmp/**/{logs.json,checkpoint*.json}` | ⚠️ best-effort (upstream format; no local data to verify) |
+| **Claude Code** | `~/.claude/projects/**/*.jsonl` | ✅ 已用真实数据验证 |
+| **Codex CLI** | `~/.codex/sessions/**/rollout-*.jsonl` | ✅ 已用真实数据验证 |
+| **opencode** | `~/.local/share/opencode/opencode.db`（SQLite） | ✅ 已用真实数据验证 |
+| **Gemini CLI** | `~/.gemini/tmp/**/{logs.json,checkpoint*.json}` | ⚠️ 尽力而为（上游格式，无本地数据可验证） |
+| **Qwen Code** | `~/.qwen/tmp/**/{logs.json,checkpoint*.json}` | ⚠️ 尽力而为（上游格式，无本地数据可验证） |
 
-This tool is **local CLI only** — it reads conversation logs that command-line
-AI tools leave on your disk. **Web conversations** (ChatGPT, Claude.ai, …) live on
-the provider's servers with no local file to read; they are handled by a separate
-companion **userscript** (browser extension) project, which exports the page you
-are looking at, from within your own logged-in session.
+本工具**只管本地 CLI**——读取命令行 AI 工具留在你磁盘上的对话日志。**网页版对话**
+（ChatGPT、Claude.ai 等）存在服务商服务器上，本地没有文件可读；它们由配套的独立
+**油猴脚本**（浏览器扩展）项目处理，在你自己已登录的会话里导出你正在看的页面。
 
-## Usage
+## 用法
 
 ```bash
-# Export everything found on this machine → ./ai-conversations-export
+# 导出本机找到的所有对话 → ./ai-conversations-export
 npx ai-cli-chat-export
 
-# See what's here without writing anything
+# 只看有什么、不写任何文件
 npx ai-cli-chat-export --list
 
-# Only specific sources
+# 只导指定来源
 npx ai-cli-chat-export --source claude-code,codex
 
-# Filter by date, Markdown only, include model reasoning
+# 按日期筛选、只要 Markdown、包含模型思考过程
 npx ai-cli-chat-export --since 2026-01-01 --format md --include-thinking
 ```
 
-### Options
+### 选项
 
 ```
--o, --out <dir>        Output directory (default: ./ai-conversations-export)
--f, --format <list>    md,json (default: both)
--s, --source <list>    Restrict to sources: claude-code, codex, opencode,
+-o, --out <dir>        输出目录（默认：./ai-conversations-export）
+-f, --format <list>    md,json（默认：两者都要）
+-s, --source <list>    限定来源：claude-code, codex, opencode,
                        gemini, qwen
-    --since <date>     Only conversations updated on/after YYYY-MM-DD
-    --until <date>     Only conversations updated on/before YYYY-MM-DD
-    --include-thinking Include model reasoning/thinking blocks
--l, --list             List what would be exported; write nothing
--h, --help             Show help
+    --since <date>     只要在 YYYY-MM-DD 当天或之后更新的对话
+    --until <date>     只要在 YYYY-MM-DD 当天或之前更新的对话
+    --include-thinking 包含模型的推理/思考块
+-l, --list             列出将导出什么；不写任何文件
+-h, --help             显示帮助
 ```
 
-## Output layout
+## 输出结构
 
 ```
 ai-conversations-export/
-├── index.md                # human-browsable table of contents
-├── index.json              # machine-readable manifest
+├── index.md                # 人类可浏览的目录
+├── index.json              # 机器可读的清单
 ├── claude-code/
 │   └── 2026-07-06-<title>.md / .json
 ├── codex/
@@ -68,30 +67,29 @@ ai-conversations-export/
 └── gemini/ …
 ```
 
-Each conversation becomes one Markdown file (readable) and/or one JSON file
-(lossless canonical form: `{ id, source, title, createdAt, model, messages[] }`).
+每段对话生成一个 Markdown 文件（易读）和/或一个 JSON 文件（无损的规范形式：
+`{ id, source, title, createdAt, model, messages[] }`）。
 
-## Requirements
+## 环境要求
 
-Node ≥ 22.5 (for the built-in SQLite reader used by the opencode adapter).
-On Node 22.5–23 the tool transparently re-execs itself with
-`--experimental-sqlite`; on Node ≥ 24 SQLite is stable and no flag is needed.
+Node ≥ 22.5（opencode 适配器用到的内置 SQLite 读取器需要）。
+在 Node 22.5–23 上，工具会透明地用 `--experimental-sqlite` 重新执行自身；
+在 Node ≥ 24 上 SQLite 已稳定，无需任何标志。
 
-## Extending
+## 扩展
 
-Add a new tool in one file: implement the `Adapter` interface
-(`src/types.ts`) — `discover()` returns `Conversation[]` in the canonical
-schema — and register it in `src/adapters/index.ts`. Renderers and the CLI
-need no changes.
+新增一个工具只需一个文件：实现 `Adapter` 接口（`src/types.ts`）——
+`discover()` 返回规范 schema 的 `Conversation[]`——并在
+`src/adapters/index.ts` 里注册。渲染器和 CLI 都无需改动。
 
-## Development
+## 开发
 
 ```bash
-npm install      # dev deps only (typescript, @types/node)
+npm install      # 仅开发依赖（typescript, @types/node）
 npm run build    # → dist/
 node dist/cli.js --list
 ```
 
-## License
+## 许可证
 
 MIT
