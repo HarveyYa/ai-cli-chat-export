@@ -1,0 +1,10 @@
+{
+  "name": "ai-cli-chat-export",
+  "description": "Export local command-line AI assistant conversation history (Claude Code, Codex, opencode, Gemini/Qwen, Aider, Cursor CLI, Goose) to portable Markdown + JSON. Read-only, local-only.",
+  "version": "0.1.0",
+  "author": {
+    "name": "HarveyYa"
+  },
+  "homepage": "https://github.com/HarveyYa/ai-cli-chat-export",
+  "license": "MIT"
+}

@@ -86,6 +86,19 @@ acx --since 2026-01-01 --format md --include-thinking
 `-2`、`-3` 副本。想强制全量重导时加 `--full`。已有的旧导出目录首次增量运行会自动沿用其
 `index.json`，不会把存量全部当成新增。
 
+## 作为 Claude Code 插件使用
+
+本仓库本身就是一个 Claude Code marketplace,内置 `/export-ai-chats` skill。在
+Claude Code 里:
+
+```
+/plugin marketplace add HarveyYa/ai-cli-chat-export
+/plugin install ai-cli-chat-export@ai-cli-chat-export
+```
+
+装好后,直接对 Claude 说「导出我本地的 AI 对话记录」,或输入 `/export-ai-chats`,
+它就会调用本工具完成导出。
+
 ## 输出结构
 
 ```

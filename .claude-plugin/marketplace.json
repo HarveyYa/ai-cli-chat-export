@@ -1,0 +1,18 @@
+{
+  "name": "ai-cli-chat-export",
+  "owner": {
+    "name": "HarveyYa"
+  },
+  "metadata": {
+    "description": "Tools for exporting local command-line AI assistant conversation history to portable Markdown + JSON."
+  },
+  "plugins": [
+    {
+      "name": "ai-cli-chat-export",
+      "source": ".",
+      "description": "Export local CLI AI conversation history to Markdown + JSON via the /export-ai-chats skill.",
+      "category": "productivity",
+      "tags": ["export", "backup", "claude-code", "codex", "conversation-history"]
+    }
+  ]
+}

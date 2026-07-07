@@ -94,6 +94,19 @@ copies like earlier versions produced. Pass `--full` to force a complete re-expo
 pre-incremental export directory is adopted automatically from its `index.json` on the first
 incremental run, so nothing is re-exported wholesale.
 
+## Use as a Claude Code plugin
+
+This repo is itself a Claude Code marketplace, with a bundled `/export-ai-chats`
+skill. Inside Claude Code:
+
+```
+/plugin marketplace add HarveyYa/ai-cli-chat-export
+/plugin install ai-cli-chat-export@ai-cli-chat-export
+```
+
+Once installed, just tell Claude "export my local AI chat history" or type
+`/export-ai-chats`, and it runs this tool for you.
+
 ## Output layout
 
 ```
