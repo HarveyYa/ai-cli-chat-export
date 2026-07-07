@@ -3,3 +3,6 @@ dist/
 ai-conversations-export/
 *.log
 .DS_Store
+
+# npm auth (reads token from env; never commit a literal token)
+.npmrc
